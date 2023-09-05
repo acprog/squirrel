@@ -1,0 +1,12 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UE4Editor-Squirrel.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"W:\UnrealProjects\solargene\Intermediate\Build\Win64\solarEditor\Development\Core\SharedPCH.Core.h.obj"
+"W:\UnrealProjects\solargene\Plugins\Squirrel\Intermediate\Build\Win64\UE4Editor\Development\Squirrel\Squirrel.cpp.obj"
+"W:\UnrealProjects\solargene\Plugins\Squirrel\Intermediate\Build\Win64\UE4Editor\Development\Squirrel\Default.rc2.res"
+/OUT:"W:\UnrealProjects\solargene\Plugins\Squirrel\Intermediate\Build\Win64\UE4Editor\Development\Squirrel\UE4Editor-Squirrel.lib"

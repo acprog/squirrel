@@ -1,0 +1,7 @@
+{
+	"SourceFiles": [
+		"W:\\UnrealProjects\\solargene\\Plugins\\Squirrel\\Source\\Squirrel\\Squirrel.Build.cs",
+		"W:\\UnrealProjects\\solargene\\Plugins\\Squirrel\\Source\\ThirdParty\\SquirrelLibrary\\SquirrelLibrary.Build.cs"
+	],
+	"EngineVersion": "4.27.2"
+}

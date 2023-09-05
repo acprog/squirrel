@@ -1,0 +1,38 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.Squirrel.cpp.obj": [
+			"args.cpp.obj",
+			"array.cpp.obj",
+			"class.cpp.obj",
+			"enum.cpp.obj",
+			"function.cpp.obj",
+			"instance.cpp.obj",
+			"object.cpp.obj",
+			"script.cpp.obj",
+			"table.cpp.obj",
+			"vm.cpp.obj",
+			"sqstdaux.cpp.obj",
+			"sqstdblob.cpp.obj",
+			"sqstdio.cpp.obj",
+			"sqstdmath.cpp.obj",
+			"sqstdrex.cpp.obj",
+			"sqstdstream.cpp.obj",
+			"sqstdstring.cpp.obj",
+			"sqstdsystem.cpp.obj",
+			"Squirrel.cpp.obj",
+			"sqapi.cpp.obj",
+			"sqbaselib.cpp.obj",
+			"sqclass.cpp.obj",
+			"sqcompiler.cpp.obj",
+			"sqdebug.cpp.obj",
+			"sqfuncstate.cpp.obj",
+			"sqlexer.cpp.obj",
+			"sqmem.cpp.obj",
+			"sqobject.cpp.obj",
+			"sqstate.cpp.obj",
+			"sqtable.cpp.obj",
+			"sqvm.cpp.obj"
+		]
+	}
+}

@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Squirrel",
+	"Description": "Support for Squirrel script",
+	"Category": "Scripting Languages",
+	"CreatedBy": "Alexander Semenov",
+	"CreatedByURL": "acmain@gmail.com",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "Squirrel",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}

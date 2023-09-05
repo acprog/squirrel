@@ -1,0 +1,12 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UE4Editor-Squirrel-Win64-DebugGame.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"W:\UnrealProjects\solargene\Intermediate\Build\Win64\solarEditor\DebugGame\Core\SharedPCH.Core.NonOptimized.h.obj"
+"W:\UnrealProjects\solargene\Plugins\Squirrel\Intermediate\Build\Win64\UE4Editor\DebugGame\Squirrel\Module.Squirrel.cpp.obj"
+"W:\UnrealProjects\solargene\Plugins\Squirrel\Intermediate\Build\Win64\UE4Editor\DebugGame\Squirrel\Default.rc2.res"
+/OUT:"W:\UnrealProjects\solargene\Plugins\Squirrel\Intermediate\Build\Win64\UE4Editor\DebugGame\Squirrel\UE4Editor-Squirrel-Win64-DebugGame.lib"
