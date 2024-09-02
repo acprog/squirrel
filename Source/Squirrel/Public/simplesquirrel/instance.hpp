@@ -55,6 +55,10 @@ namespace ssq {
         Instance& operator = (Instance&& other) NOEXCEPT;
 
         Function findFunc(const FString& name);
+
+        void setWeak() {
+          weak = true;
+        }
     };
 
     /**
