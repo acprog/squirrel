@@ -942,6 +942,8 @@ const SQRegFunction SQSharedState::_array_default_delegate_funcz[]={
     {_SC("reduce"),array_reduce,-2, _SC("ac.")},
     {_SC("filter"),array_filter,2, _SC("ac")},
     {_SC("find"),array_find,2, _SC("a.")},
+    {_SC("indexof"), array_find, 2, _SC("a.")},
+    {_SC("removeat"), array_remove, 2, _SC("an")},
     {NULL,(SQFUNCTION)0,0,NULL}
 };
 
