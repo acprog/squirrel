@@ -42,12 +42,24 @@ namespace ssq {
          */
         template<typename T>
         void addSlot(const char* name, const T& value) {
-            sq_pushobject(vm, obj);
-            sq_pushstring(vm, name, strlen(name));
-            detail::push<T>(vm, value);
-            sq_newslot(vm, -3, false);
-            sq_pop(vm,1); // pop table
-        }
+#ifdef SQUNICODE
+          // SQChar == wchar_t (== TCHAR в UE).
+          // Конвертируем узкую строку в FString и берём *FString как const SQChar*.
+          FString fname(name);
+          sq_pushobject(vm, obj);
+          sq_pushstring(vm, *fname, fname.Len());
+          detail::push<T>(vm, value);
+          sq_newslot(vm, -3, false);
+          sq_pop(vm, 1); // pop table
+#else
+          // SQChar == char (UTF-8).
+          sq_pushobject(vm, obj);
+          sq_pushstring(vm, name, static_cast<SQInteger>(strlen(name)));
+          detail::push<T>(vm, value);
+          sq_newslot(vm, -3, false);
+          sq_pop(vm, 1); // pop table
+#endif        
+				}
         /**
         * @brief Copy assingment operator
         */

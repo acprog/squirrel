@@ -267,7 +267,7 @@ bool SQVM::ObjCmp(const SQObjectPtr &o1,const SQObjectPtr &o2,SQInteger &result)
 
     }
     assert(0);
-    _RET_SUCCEED(0); //cannot happen
+//    _RET_SUCCEED(0); //cannot happen
 }
 
 bool SQVM::CMP_OP(CmpOP op, const SQObjectPtr &o1,const SQObjectPtr &o2,SQObjectPtr &res)
@@ -1641,7 +1641,7 @@ SQInteger prevstackbase = _stackbase;
         assert(_stackbase == prevstackbase);
     }
 #endif
-    return true;
+//    return true;
 }
 
 bool SQVM::CallMetaMethod(SQObjectPtr &closure,SQMetaMethod SQ_UNUSED_ARG(mm),SQInteger nparams,SQObjectPtr &outres)

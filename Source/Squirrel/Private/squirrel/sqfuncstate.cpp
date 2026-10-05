@@ -287,6 +287,9 @@ SQInteger SQFuncState::TopTarget(){
 }
 SQInteger SQFuncState::PopTarget()
 {
+    if (_targetstack.empty())
+      Error(_SC("invalid syntax"));
+
     SQUnsignedInteger npos=_targetstack.back();
     assert(npos < _vlocals.size());
     SQLocalVarInfo &t = _vlocals[npos];

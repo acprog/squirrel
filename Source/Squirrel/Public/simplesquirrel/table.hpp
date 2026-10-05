@@ -126,7 +126,7 @@ namespace ssq {
         }
 
         template<typename T>
-        inline void set(int uid, const T& value) {
+        inline void set(int64 uid, const T& value) {
           sq_pushobject(vm, obj);
           sq_pushinteger(vm, uid);
           detail::push<T>(vm, value);

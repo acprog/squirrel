@@ -550,7 +550,7 @@ static const SQChar *sqstd_rex_matchnode(SQRex* exp,SQRexNode *node,const SQChar
         str++;
         return str;
     }
-    return NULL;
+    //return NULL;
 }
 
 /* public api */

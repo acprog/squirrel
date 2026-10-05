@@ -225,11 +225,22 @@ namespace ssq {
          */
         template<typename T>
         inline void setConst(const char* name, const T& value) {
-            sq_pushconsttable(vm);
-            sq_pushstring(vm, name, strlen(name));
-            detail::push<T>(vm, value);
-            sq_newslot(vm, -3, false);
-            sq_pop(vm,1); // pop table
+#ifdef SQUNICODE
+          // SQChar == wchar_t (== TCHAR в UE).
+          FString fname(name);
+          sq_pushconsttable(vm);
+          sq_pushstring(vm, *fname, static_cast<SQInteger>(fname.Len()));
+          detail::push<T>(vm, value);
+          sq_newslot(vm, -3, false);
+          sq_pop(vm, 1); // pop table
+#else
+          // SQChar == char (UTF-8).
+          sq_pushconsttable(vm);
+          sq_pushstring(vm, name, static_cast<SQInteger>(strlen(name)));
+          detail::push<T>(vm, value);
+          sq_newslot(vm, -3, false);
+          sq_pop(vm, 1); // pop table
+#endif
         }
         /**
         * @brief Prints stack objects

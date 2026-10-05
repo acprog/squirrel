@@ -273,7 +273,7 @@ SQInteger SQLexer::Lex()
                     NEXT();
                     RETURN_TOKEN(c);
                 }
-                RETURN_TOKEN(0);
+//                RETURN_TOKEN(0);
             }
         }
     }
