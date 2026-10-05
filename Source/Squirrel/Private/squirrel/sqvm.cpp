@@ -129,6 +129,7 @@ SQVM::SQVM(SQSharedState *ss)
     _nnativecalls = 0;
     _nmetamethodscall = 0;
     _applyingNativeInits = false;
+    _markNextFrameNativeInits = false;
     _lasterror.Null();
     _errorhandler.Null();
     _debughook = false;
@@ -437,6 +438,9 @@ bool SQVM::StartCall(SQClosure *closure,SQInteger target,SQInteger args,SQIntege
 
     if(!EnterFrame(stackbase, newtop, tailcall)) return false;
 
+    if (sq_type(func->_name) == OT_STRING && scstrcmp(_stringval(func->_name), _SC("constructor")) == 0)
+        ci->_applyNativeInits = SQTrue;
+
     ci->_closure  = closure;
     ci->_literals = func->_literals;
     ci->_ip       = func->_instructions;
@@ -464,19 +468,9 @@ bool SQVM::Return(SQInteger _arg0, SQInteger _arg1, SQObjectPtr &retval)
 {
     SQObjectPtr selfToInit;
     bool needInit = false;
-    if (sq_type(ci->_closure) == OT_CLOSURE || sq_type(ci->_closure) == OT_NATIVECLOSURE) {
-        SQObjectPtr name;
-        if (sq_type(ci->_closure) == OT_CLOSURE)
-            name = _closure(ci->_closure)->_function->_name;
-        else
-            name = _nativeclosure(ci->_closure)->_name;
-        if (sq_type(name) == OT_STRING && scstrcmp(_stringval(name), _SC("constructor")) == 0) {
-            SQObjectPtr &self = _stack._vals[_stackbase];
-            if (sq_type(self) == OT_INSTANCE) {
-                selfToInit = self;
-                needInit = true;
-            }
-        }
+    if (ci->_applyNativeInits && sq_type(_stack._vals[_stackbase]) == OT_INSTANCE) {
+        selfToInit = _stack._vals[_stackbase];
+        needInit = true;
     }
 
     SQBool    _isroot      = ci->_root;
@@ -824,7 +818,11 @@ exception_restore:
                             case OT_CLOSURE:
                                 stkbase = _stackbase+arg2;
                                 _stack._vals[stkbase] = inst;
-                                _GUARD(StartCall(_closure(clo), -1, arg3, stkbase, false));
+                                _markNextFrameNativeInits = true;
+                                if (!StartCall(_closure(clo), -1, arg3, stkbase, false)) {
+                                    _markNextFrameNativeInits = false;
+                                    SQ_THROW();
+                                }
                                 break;
                             case OT_NATIVECLOSURE:
                                 bool dummy;
@@ -1690,11 +1688,19 @@ SQInteger prevstackbase = _stackbase;
         SQObjectPtr constr;
         SQObjectPtr temp;
         CreateClassInstance(_class(closure), outres, constr);
-        if (sq_type(constr) == OT_NATIVECLOSURE || sq_type(constr) == OT_CLOSURE) {
+        if (sq_type(constr) == OT_CLOSURE) {
+            _stack[stackbase] = outres;
+            _markNextFrameNativeInits = true;
+            if (!Call(constr, nparams, stackbase, temp, raiseerror)) {
+                _markNextFrameNativeInits = false;
+                return false;
+            }
+        }
+        else if (sq_type(constr) == OT_NATIVECLOSURE) {
             _stack[stackbase] = outres;
             if (!Call(constr, nparams, stackbase, temp, raiseerror)) return false;
+            if (!ApplyNativeInits(outres)) return false;
         }
-        if (!ApplyNativeInits(outres)) return false;
         return true;
     }
         break;
@@ -1760,6 +1766,8 @@ bool SQVM::EnterFrame(SQInteger newbase, SQInteger newtop, bool tailcall)
         ci->_ncalls = 1;
         ci->_generator = NULL;
         ci->_root = SQFalse;
+        ci->_applyNativeInits = _markNextFrameNativeInits ? SQTrue : SQFalse;
+        _markNextFrameNativeInits = false;
     }
     else {
         ci->_ncalls++;

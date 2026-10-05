@@ -45,6 +45,7 @@ struct SQVM : public CHAINABLE_OBJ
         SQInt32 _target;
         SQInt32 _ncalls;
         SQBool _root;
+        SQBool _applyNativeInits;
     };
 
 typedef sqvector<CallInfo> CallInfoVec;
@@ -173,6 +174,7 @@ public:
     SQInteger _nnativecalls;
     SQInteger _nmetamethodscall;
     bool _applyingNativeInits;
+    bool _markNextFrameNativeInits;
     SQRELEASEHOOK _releasehook;
     //suspend infos
     SQBool _suspended;
