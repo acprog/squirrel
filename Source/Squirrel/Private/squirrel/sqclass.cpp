@@ -28,6 +28,8 @@ SQClass::SQClass(SQSharedState *ss,SQClass *base)
     }
     _members = base?base->_members->Clone() : SQTable::Create(ss,0);
     __ObjAddRef(_members);
+    _nativeinits = base && base->_nativeinits ? base->_nativeinits->Clone() : SQTable::Create(ss, 0);
+    __ObjAddRef(_nativeinits);
 
     INIT_CHAIN();
     ADD_TO_CHAIN(&_sharedstate->_gc_chain, this);
@@ -39,6 +41,7 @@ void SQClass::Finalize() {
     _methods.resize(0);
     _NULL_SQOBJECT_VECTOR(_metamethods,MT_LAST);
     __ObjRelease(_members);
+    __ObjRelease(_nativeinits);
     if(_base) {
         __ObjRelease(_base);
     }
@@ -50,6 +53,21 @@ SQClass::~SQClass()
     Finalize();
 }
 
+
+static bool HasNativeSetter(SQClass *cls, const SQObjectPtr &key)
+{
+    for (SQClass *c = cls; c; c = c->_base) {
+        SQObjectPtr mm = c->_metamethods[MT_SET];
+        if (sq_type(mm) != OT_NATIVECLOSURE) continue;
+        SQNativeClosure *nc = _nativeclosure(mm);
+        if (nc->_noutervalues < 1) continue;
+        if (sq_type(nc->_outervalues[0]) != OT_TABLE) continue;
+        SQObjectPtr tmp;
+        if (_table(nc->_outervalues[0])->Get(key, tmp)) return true;
+    }
+    return false;
+}
+
 bool SQClass::NewSlot(SQSharedState *ss,const SQObjectPtr &key,const SQObjectPtr &val,bool bstatic)
 {
     SQObjectPtr temp;
@@ -59,6 +77,10 @@ bool SQClass::NewSlot(SQSharedState *ss,const SQObjectPtr &key,const SQObjectPtr
     if(_members->Get(key,temp) && _isfield(temp)) //overrides the default value
     {
         _defaultvalues[_member_idx(temp)].val = val;
+        return true;
+    }
+    if(!belongs_to_static_table && sq_type(temp) == OT_NULL && HasNativeSetter(this, key)) {
+        _nativeinits->NewSlot(key, val);
         return true;
     }
 	if (_members->CountUsed() >= MEMBER_MAX_COUNT) {

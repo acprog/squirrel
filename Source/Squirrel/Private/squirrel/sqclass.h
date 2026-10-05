@@ -73,6 +73,7 @@ public:
     SQInteger Next(const SQObjectPtr &refpos, SQObjectPtr &outkey, SQObjectPtr &outval);
     SQInstance *CreateInstance();
     SQTable *_members;
+    SQTable *_nativeinits;
     SQClass *_base;
     SQClassMemberVec _defaultvalues;
     SQClassMemberVec _methods;

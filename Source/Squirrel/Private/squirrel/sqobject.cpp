@@ -595,6 +595,7 @@ void SQClass::Mark(SQCollectable **chain)
 {
     START_MARK()
         _members->Mark(chain);
+        if(_nativeinits) _nativeinits->Mark(chain);
         if(_base) _base->Mark(chain);
         SQSharedState::MarkObject(_attributes, chain);
         for(SQUnsignedInteger i =0; i< _defaultvalues.size(); i++) {

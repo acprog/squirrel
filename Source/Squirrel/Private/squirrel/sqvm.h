@@ -62,6 +62,7 @@ public:
     //starts a SQUIRREL call in the same "Execution loop"
     bool StartCall(SQClosure *closure, SQInteger target, SQInteger nargs, SQInteger stackbase, bool tailcall);
     bool CreateClassInstance(SQClass *theclass, SQObjectPtr &inst, SQObjectPtr &constructor);
+    bool ApplyNativeInits(const SQObjectPtr &inst);
     //call a generic closure pure SQUIRREL or NATIVE
     bool Call(SQObjectPtr &closure, SQInteger nparams, SQInteger stackbase, SQObjectPtr &outres,SQBool raiseerror);
     SQRESULT Suspend();
@@ -171,6 +172,7 @@ public:
     SQSharedState *_sharedstate;
     SQInteger _nnativecalls;
     SQInteger _nmetamethodscall;
+    bool _applyingNativeInits;
     SQRELEASEHOOK _releasehook;
     //suspend infos
     SQBool _suspended;

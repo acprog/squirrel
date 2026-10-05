@@ -128,6 +128,7 @@ SQVM::SQVM(SQSharedState *ss)
     _foreignptr = NULL;
     _nnativecalls = 0;
     _nmetamethodscall = 0;
+    _applyingNativeInits = false;
     _lasterror.Null();
     _errorhandler.Null();
     _debughook = false;
@@ -461,6 +462,23 @@ bool SQVM::StartCall(SQClosure *closure,SQInteger target,SQInteger args,SQIntege
 
 bool SQVM::Return(SQInteger _arg0, SQInteger _arg1, SQObjectPtr &retval)
 {
+    SQObjectPtr selfToInit;
+    bool needInit = false;
+    if (sq_type(ci->_closure) == OT_CLOSURE || sq_type(ci->_closure) == OT_NATIVECLOSURE) {
+        SQObjectPtr name;
+        if (sq_type(ci->_closure) == OT_CLOSURE)
+            name = _closure(ci->_closure)->_function->_name;
+        else
+            name = _nativeclosure(ci->_closure)->_name;
+        if (sq_type(name) == OT_STRING && scstrcmp(_stringval(name), _SC("constructor")) == 0) {
+            SQObjectPtr &self = _stack._vals[_stackbase];
+            if (sq_type(self) == OT_INSTANCE) {
+                selfToInit = self;
+                needInit = true;
+            }
+        }
+    }
+
     SQBool    _isroot      = ci->_root;
     SQInteger callerbase   = _stackbase - ci->_prevstkbase;
 
@@ -488,6 +506,7 @@ bool SQVM::Return(SQInteger _arg0, SQInteger _arg1, SQObjectPtr &retval)
         //*dest = (_arg0 != 0xFF) ? _stack._vals[_stackbase+_arg1] : _null_;
     }
     LeaveFrame();
+    if (needInit && !ApplyNativeInits(selfToInit)) return false;
     return _isroot ? true : false;
 }
 
@@ -812,6 +831,7 @@ exception_restore:
                                 stkbase = _stackbase+arg2;
                                 _stack._vals[stkbase] = inst;
                                 _GUARD(CallNative(_nativeclosure(clo), arg3, stkbase, clo, -1, dummy, dummy));
+                                _GUARD(ApplyNativeInits(inst));
                                 break;
                             default: break; //shutup GCC 4.x
                         }
@@ -1163,6 +1183,26 @@ bool SQVM::CreateClassInstance(SQClass *theclass, SQObjectPtr &inst, SQObjectPtr
         constructor.Null();
     }
     return true;
+}
+
+bool SQVM::ApplyNativeInits(const SQObjectPtr &inst)
+{
+    if (_applyingNativeInits) return true;
+    if (sq_type(inst) != OT_INSTANCE) return true;
+    SQTable *inits = _instance(inst)->_class->_nativeinits;
+    if (!inits) return true;
+
+    _applyingNativeInits = true;
+    SQObjectPtr iter, key, val;
+    iter.Null();
+    SQInteger idx;
+    bool ok = true;
+    while ((idx = inits->Next(false, iter, key, val)) != -1) {
+        iter = idx;
+        if (!Set(inst, key, val, DONT_FALL_BACK)) { ok = false; break; }
+    }
+    _applyingNativeInits = false;
+    return ok;
 }
 
 void SQVM::CallErrorHandler(SQObjectPtr &error)
@@ -1649,14 +1689,14 @@ SQInteger prevstackbase = _stackbase;
     case OT_CLASS: {
         SQObjectPtr constr;
         SQObjectPtr temp;
-        CreateClassInstance(_class(closure),outres,constr);
-        SQObjectType ctype = sq_type(constr);
-        if (ctype == OT_NATIVECLOSURE || ctype == OT_CLOSURE) {
+        CreateClassInstance(_class(closure), outres, constr);
+        if (sq_type(constr) == OT_NATIVECLOSURE || sq_type(constr) == OT_CLOSURE) {
             _stack[stackbase] = outres;
-            return Call(constr,nparams,stackbase,temp,raiseerror);
+            if (!Call(constr, nparams, stackbase, temp, raiseerror)) return false;
         }
+        if (!ApplyNativeInits(outres)) return false;
         return true;
-                   }
+    }
         break;
     default:
         Raise_Error(_SC("attempt to call '%s'"), GetTypeName(closure));
