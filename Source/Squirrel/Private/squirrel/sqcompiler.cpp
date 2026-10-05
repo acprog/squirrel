@@ -1223,7 +1223,9 @@ public:
     void ForEachStatement()
     {
         SQObject idxname, valname;
-        Lex(); Expect(_SC('(')); valname = Expect(TK_IDENTIFIER);
+        Lex(); Expect(_SC('('));
+        Expect(TK_LOCAL);
+        valname = Expect(TK_IDENTIFIER);
         if(_token == _SC(',')) {
             idxname = valname;
             Lex(); valname = Expect(TK_IDENTIFIER);

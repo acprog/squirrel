@@ -7,6 +7,8 @@ public class Squirrel : ModuleRules
 	public Squirrel(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+
+		IWYUSupport = IWYUSupport.None;
 		
 		PublicIncludePaths.AddRange(
 			new string[] {
