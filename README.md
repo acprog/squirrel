@@ -8,3 +8,6 @@ Copyright (c) 2003-2022 Alberto Demichelis
 
 https://github.com/matusnovak/simplesquirrel
 Copyright (c) 2019 Matus Novak matusnov@gmail.com
+
+Изменения:
+1. operator 'in' для array работает по логике из table - для проверки наличия элемента в массиве
