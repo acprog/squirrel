@@ -174,7 +174,6 @@ public:
     SQInteger _nnativecalls;
     SQInteger _nmetamethodscall;
     bool _applyingNativeInits;
-    bool _markNextFrameNativeInits;
     SQRELEASEHOOK _releasehook;
     //suspend infos
     SQBool _suspended;

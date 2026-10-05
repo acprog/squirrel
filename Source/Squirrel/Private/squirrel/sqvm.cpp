@@ -129,7 +129,6 @@ SQVM::SQVM(SQSharedState *ss)
     _nnativecalls = 0;
     _nmetamethodscall = 0;
     _applyingNativeInits = false;
-    _markNextFrameNativeInits = false;
     _lasterror.Null();
     _errorhandler.Null();
     _debughook = false;
@@ -818,11 +817,7 @@ exception_restore:
                             case OT_CLOSURE:
                                 stkbase = _stackbase+arg2;
                                 _stack._vals[stkbase] = inst;
-                                _markNextFrameNativeInits = true;
-                                if (!StartCall(_closure(clo), -1, arg3, stkbase, false)) {
-                                    _markNextFrameNativeInits = false;
-                                    SQ_THROW();
-                                }
+                                _GUARD(StartCall(_closure(clo), -1, arg3, stkbase, false));
                                 break;
                             case OT_NATIVECLOSURE:
                                 bool dummy;
@@ -1690,11 +1685,7 @@ SQInteger prevstackbase = _stackbase;
         CreateClassInstance(_class(closure), outres, constr);
         if (sq_type(constr) == OT_CLOSURE) {
             _stack[stackbase] = outres;
-            _markNextFrameNativeInits = true;
-            if (!Call(constr, nparams, stackbase, temp, raiseerror)) {
-                _markNextFrameNativeInits = false;
-                return false;
-            }
+            if (!Call(constr, nparams, stackbase, temp, raiseerror)) return false;
         }
         else if (sq_type(constr) == OT_NATIVECLOSURE) {
             _stack[stackbase] = outres;
@@ -1766,8 +1757,7 @@ bool SQVM::EnterFrame(SQInteger newbase, SQInteger newtop, bool tailcall)
         ci->_ncalls = 1;
         ci->_generator = NULL;
         ci->_root = SQFalse;
-        ci->_applyNativeInits = _markNextFrameNativeInits ? SQTrue : SQFalse;
-        _markNextFrameNativeInits = false;
+        ci->_applyNativeInits = SQFalse;
     }
     else {
         ci->_ncalls++;
