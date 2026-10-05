@@ -1464,27 +1464,34 @@ public:
             END_SCOPE();
         }
     }
-	SQInteger ParseBindEnv()
-	{
-		SQInteger boundtarget;
-		Lex();
-		Expression();
-		boundtarget = _fs->TopTarget();
-		Expect(_SC(']'));
-		return boundtarget;
-	}
+
+    SQInteger ParseBindEnv()
+    {
+      SQInteger boundtarget;
+      Lex();
+      Expression();
+      boundtarget = _fs->TopTarget();
+      Expect(_SC(']'));
+      return boundtarget;
+    }
+
     void FunctionExp(bool lambda = false)
     {
-        Lex(); 
-		SQInteger boundtarget = 0xFF;
-		if (_token == _SC('[')) {
-			boundtarget = ParseBindEnv();
-		}
-		Expect(_SC('('));
+        Lex();
+        SQInteger boundtarget = 0xFF;
+        if (_token == _SC('[')) {
+            boundtarget = ParseBindEnv();
+        }
+        Expect(_SC('('));
         SQObjectPtr dummy;
         CreateFunction(dummy, boundtarget, lambda);
-        _fs->AddInstruction(_OP_CLOSURE, _fs->PushTarget(), _fs->_functions.size() - 1, boundtarget);
+        if (boundtarget == 0xFF) {
+            boundtarget = _fs->GetLocalVariable(_fs->CreateString(_SC("this")));
+        }
+        _fs->AddInstruction(_OP_CLOSURE, _fs->PushTarget(),
+                            _fs->_functions.size() - 1, boundtarget);
     }
+
     void ClassExp()
     {
         SQInteger base = -1;

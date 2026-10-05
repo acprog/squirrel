@@ -12,3 +12,4 @@ Copyright (c) 2019 Matus Novak matusnov@gmail.com
 Отличия от Squirrel 3.2:
 1. operator 'in' для array работает по логике из table - для проверки наличия элемента в массиве
 2. требуется local перед переменными в foreach (local ...)
+3. автоматический .bindenv(this) для всех встроенных функций
