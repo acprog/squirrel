@@ -527,6 +527,18 @@ static SQInteger table_map(HSQUIRRELVM v)
 	return 1;
 }
 
+static SQInteger table_find(HSQUIRRELVM v)
+{
+    SQObject &self = stack_get(v, 1);
+    SQObject &key = stack_get(v, 2);
+    SQObjectPtr val;
+    if (_table(self)->Get(key, val)) {
+        v->Push(val);
+        return 1;
+    }
+    return 0;
+}
+
 #define TABLE_TO_ARRAY_FUNC(_funcname_,_valname_) static SQInteger _funcname_(HSQUIRRELVM v) \
 { \
 	SQObject &o = stack_get(v, 1); \
@@ -564,9 +576,10 @@ const SQRegFunction SQSharedState::_table_default_delegate_funcz[]={
     {_SC("setdelegate"),table_setdelegate,2, _SC(".t|o")},
     {_SC("getdelegate"),table_getdelegate,1, _SC(".")},
     {_SC("filter"),table_filter,2, _SC("tc")},
-	{_SC("map"),table_map,2, _SC("tc") },
-	{_SC("keys"),table_keys,1, _SC("t") },
-	{_SC("values"),table_values,1, _SC("t") },
+  	{_SC("map"),table_map,2, _SC("tc") },
+  	{_SC("keys"),table_keys,1, _SC("t") },
+  	{_SC("values"),table_values,1, _SC("t") },
+	  {_SC("find"), table_find, 2, _SC("t.")},
     {NULL,(SQFUNCTION)0,0,NULL}
 };
 
