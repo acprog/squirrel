@@ -102,10 +102,16 @@ bool SQVM::ARITH_OP(SQUnsignedInteger op,SQObjectPtr &trg,const SQObjectPtr &o1,
             trg = res; }
             break;
         default:
-            if(op == '+' && (tmask & _RT_STRING)){
-                if(!StringCat(o1, o2, trg)) return false;
+            if (op == '+' && sq_type(o1) == OT_ARRAY && sq_type(o2) == OT_ARRAY) {
+                SQArray *res = _array(o1)->Clone();
+                res->Extend(_array(o2));
+                trg = res;
+                return true;
             }
-            else if(!ArithMetaMethod(op,o1,o2,trg)) {
+            if (op == '+' && (tmask & _RT_STRING)) {
+                if (!StringCat(o1, o2, trg)) return false;
+            }
+            else if (!ArithMetaMethod(op, o1, o2, trg)) {
                 return false;
             }
     }

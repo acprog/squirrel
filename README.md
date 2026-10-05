@@ -13,3 +13,4 @@ Copyright (c) 2019 Matus Novak matusnov@gmail.com
 1. operator 'in' для array работает по логике из table - для проверки наличия элемента в массиве
 2. требуется local перед переменными в foreach (local ...)
 3. автоматический .bindenv(this) для всех вложеных функций
+4. складывание массивов + и += в дополнение к методу extend()
