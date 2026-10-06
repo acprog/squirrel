@@ -175,6 +175,8 @@ namespace ssq {
         };
 
         bool isDerivedFrom(const Class &parent) {
+          if (*this == parent)
+            return false;
           auto base=getBase();
           while (!(base==Class())) {
             if (base==parent)
