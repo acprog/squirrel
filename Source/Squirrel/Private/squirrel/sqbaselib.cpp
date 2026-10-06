@@ -539,6 +539,52 @@ static SQInteger table_find(HSQUIRRELVM v)
     return 0;
 }
 
+static FString StripNewlines(const FString &s)
+{
+    FString r = s;
+    r.ReplaceInline(TEXT("\r"), TEXT(""));
+    r.ReplaceInline(TEXT("\n"), TEXT(""));
+    return r;
+}
+
+static bool ObjectToString(HSQUIRRELVM v, const SQObjectPtr &o, FString &out)
+{
+    v->Push(o);
+    if (SQ_FAILED(sq_tostring(v, -1))) return false;
+    const SQChar *s = nullptr;
+    sq_getstring(v, -1, &s);
+    out = StripNewlines(FString(s));
+    sq_pop(v, 2);
+    return true;
+}
+
+static SQInteger table_tostring(HSQUIRRELVM v)
+{
+    SQObject &self = stack_get(v, 1);
+    SQTable *t = _table(self);
+    FString out = TEXT("{\n");
+
+    SQObjectPtr iter, key, val;
+    iter.Null();
+    SQInteger idx;
+    while ((idx = t->Next(false, iter, key, val)) != -1) {
+        iter = idx;
+        FString keyStr, valStr;
+        if (!ObjectToString(v, key, keyStr)) return SQ_ERROR;
+        if (!ObjectToString(v, val, valStr)) return SQ_ERROR;
+        out += TEXT("  ");
+        out += keyStr;
+        out += TEXT(" = ");
+        out += valStr;
+        out += TEXT(",\n");
+    }
+    out += TEXT("}");
+
+    v->Push(SQString::Create(_ss(v), *out));
+    return 1;
+}
+
+
 #define TABLE_TO_ARRAY_FUNC(_funcname_,_valname_) static SQInteger _funcname_(HSQUIRRELVM v) \
 { \
 	SQObject &o = stack_get(v, 1); \
@@ -571,7 +617,7 @@ const SQRegFunction SQSharedState::_table_default_delegate_funcz[]={
     {_SC("rawdelete"),table_rawdelete,2, _SC("t")},
     {_SC("rawin"),container_rawexists,2, _SC("t")},
     {_SC("weakref"),obj_delegate_weakref,1, NULL },
-    {_SC("tostring"),default_delegate_tostring,1, _SC(".")},
+    {_SC("tostring"), table_tostring, 1, _SC("t")},    
     {_SC("clear"),obj_clear,1, _SC(".")},
     {_SC("setdelegate"),table_setdelegate,2, _SC(".t|o")},
     {_SC("getdelegate"),table_getdelegate,1, _SC(".")},
@@ -921,6 +967,27 @@ static SQInteger array_slice(HSQUIRRELVM v)
 
 }
 
+static SQInteger array_tostring(HSQUIRRELVM v)
+{
+    SQArray *a = _array(stack_get(v, 1));
+    FString out = TEXT("[\n");
+
+    SQInteger n = a->Size();
+    for (SQInteger i = 0; i < n; i++) {
+        SQObjectPtr val;
+        a->Get(i, val);
+        FString valStr;
+        if (!ObjectToString(v, val, valStr)) return SQ_ERROR;
+        out += TEXT("  ");
+        out += valStr;
+        out += TEXT(",\n");
+    }
+    out += TEXT("]");
+
+    v->Push(SQString::Create(_ss(v), *out));
+    return 1;
+}
+
 const SQRegFunction SQSharedState::_array_default_delegate_funcz[]={
     {_SC("len"),default_delegate_len,1, _SC("a")},
     {_SC("append"),array_append,2, _SC("a")},
@@ -935,7 +1002,7 @@ const SQRegFunction SQSharedState::_array_default_delegate_funcz[]={
     {_SC("sort"),array_sort,-1, _SC("ac")},
     {_SC("slice"),array_slice,-1, _SC("ann")},
     {_SC("weakref"),obj_delegate_weakref,1, NULL },
-    {_SC("tostring"),default_delegate_tostring,1, _SC(".")},
+    {_SC("tostring"), array_tostring, 1, _SC("a")},
     {_SC("clear"),obj_clear,1, _SC(".")},
     {_SC("map"),array_map,2, _SC("ac")},
     {_SC("apply"),array_apply,2, _SC("ac")},
