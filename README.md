@@ -9,19 +9,18 @@ Copyright (c) 2003-2022 Alberto Demichelis
 https://github.com/matusnovak/simplesquirrel
 Copyright (c) 2019 Matus Novak matusnov@gmail.com
 
-Отличия от Squirrel 3.2:
-1. operator 'in' для array работает по логике из table - для проверки наличия элемента в массиве
-2. требуется local перед переменными в foreach (local ...)
-3. автоматический .bindenv(this) для всех вложеных функций
-4. складывание массивов + и += в дополнение к методу extend()
-5. метод find() для table по аналогии с array (поиск по ключу, возращает значение) 
-6. в массив добавлены методы indexof и removeat (дублирующие find и remove)
-7. инициализация значений по умолчанию для полей, унаследованных от C++ класса
-8. методы tostring() для таблицы и массива печатают их содержимое
-9. создание вложенных классов
-10. унарный оператор ! для проверки переменных
-11. разрешен необязательный знак + перед положительными числами
-12. разрешена передача в параметры функции int как float и float как int
-13. возможность получения элементов массива с конца через отрицательные индексы [-1]
-14. срез массива [:] по аналогии с python
-
+Differences from Squirrel 3.2:
+1. The 'in' operator for arrays works according to the logic from table — to check if an element exists in the array.
+2. local is required before variables in foreach (local ...).
+3. Automatic .bindenv(this) for all nested functions.
+4. Array concatenation using + and += in addition to the extend() method.
+5. The find() method for tables, similar to array (search by key, returns the value). 
+6. The array now includes the indexof and removeat methods (duplicating find and remove).
+7. Initialization of default values for fields inherited from a C++ class.
+8. The tostring() methods for the table and array print their contents.
+9. Creation of nested classes.
+10. The unary ! operator for variable checking.
+11. An optional + sign before positive numbers is allowed.
+12. Passing int as float and float as int to function parameters is allowed.
+13. the ability to access array elements from the end using negative indices [-1]
+14. array slice [:] similar to Python
