@@ -558,28 +558,45 @@ static bool ObjectToString(HSQUIRRELVM v, const SQObjectPtr &o, FString &out)
     return true;
 }
 
+static void PushDefaultToString(HSQUIRRELVM v, const SQObject &o) {
+  FString s = FString::Printf(TEXT("(%s : 0x%p)"), IdType2Name(sq_type(o)), (void *)_rawval(o));
+  v->Push(SQString::Create(_ss(v), *s));
+}
+
 static SQInteger table_tostring(HSQUIRRELVM v)
 {
+    static bool printing = false;
     SQObject &self = stack_get(v, 1);
+    if (printing) {
+        PushDefaultToString(v, self);
+        return 1;
+    }
+
+    printing = true;
     SQTable *t = _table(self);
     FString out = TEXT("{\n");
 
     SQObjectPtr iter, key, val;
     iter.Null();
     SQInteger idx;
+    bool ok = true;
     while ((idx = t->Next(false, iter, key, val)) != -1) {
         iter = idx;
         FString keyStr, valStr;
-        if (!ObjectToString(v, key, keyStr)) return SQ_ERROR;
-        if (!ObjectToString(v, val, valStr)) return SQ_ERROR;
+        if (!ObjectToString(v, key, keyStr) || !ObjectToString(v, val, valStr)) {
+            ok = false;
+            break;
+        }
         out += TEXT("  ");
         out += keyStr;
         out += TEXT(" = ");
         out += valStr;
         out += TEXT(",\n");
     }
-    out += TEXT("}");
+    printing = false;
+    if (!ok) return SQ_ERROR;
 
+    out += TEXT("}");
     v->Push(SQString::Create(_ss(v), *out));
     return 1;
 }
@@ -969,21 +986,35 @@ static SQInteger array_slice(HSQUIRRELVM v)
 
 static SQInteger array_tostring(HSQUIRRELVM v)
 {
-    SQArray *a = _array(stack_get(v, 1));
+    static bool printing = false;
+    SQObject &self = stack_get(v, 1);
+    if (printing) {
+        PushDefaultToString(v, self);
+        return 1;
+    }
+
+    printing = true;
+    SQArray *a = _array(self);
     FString out = TEXT("[\n");
 
+    bool ok = true;
     SQInteger n = a->Size();
     for (SQInteger i = 0; i < n; i++) {
         SQObjectPtr val;
         a->Get(i, val);
         FString valStr;
-        if (!ObjectToString(v, val, valStr)) return SQ_ERROR;
+        if (!ObjectToString(v, val, valStr)) {
+            ok = false;
+            break;
+        }
         out += TEXT("  ");
         out += valStr;
         out += TEXT(",\n");
     }
-    out += TEXT("]");
+    printing = false;
+    if (!ok) return SQ_ERROR;
 
+    out += TEXT("]");
     v->Push(SQString::Create(_ss(v), *out));
     return 1;
 }
