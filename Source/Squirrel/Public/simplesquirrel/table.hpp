@@ -73,6 +73,16 @@ namespace ssq {
             const std::function<T*(Args...)> func = &constructor.allocate;
             return addClass<T>(name, func, release);
         }
+
+        template<typename T, typename... Args>
+        Class addClass(const FString& name, const Class::Ctor<T(Args...)>& constructor, const Class& base, bool release = true) {
+            const std::function<T*(Args...)> func = &constructor.allocate;
+            sq_pushobject(vm, obj);
+            Class cls(detail::addClass<T>(vm, name, func, base.getRaw(), release));
+            sq_pop(vm, 1);
+            return cls;
+        }
+
         /**
         * @brief Adds a new class type to this table
         * @returns Class object references the added class

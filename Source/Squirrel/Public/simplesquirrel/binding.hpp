@@ -185,6 +185,46 @@ namespace ssq {
 #endif
 
 #ifdef SQUNICODE
+        template<typename T, typename... Args>
+        static Object addClass(HSQUIRRELVM vm, const FString& name, const std::function<T*(Args...)>& allocator, const HSQOBJECT& base, bool release = true) {
+            static const auto hashCode = typeid(T*).hash_code();
+            static const std::size_t nparams = sizeof...(Args);
+            Object clsObj(vm);
+
+            sq_pushstring(vm, *name, name.Len());
+            sq_pushobject(vm, base);
+            sq_newclass(vm, SQTrue);
+
+            HSQOBJECT obj;
+            sq_getstackobj(vm, -1, &obj);
+            addClassObj(vm, hashCode, obj);
+
+            sq_getstackobj(vm, -1, &clsObj.getRaw());
+            sq_addref(vm, &clsObj.getRaw());
+
+            sq_settypetag(vm, -1, reinterpret_cast<SQUserPointer>(hashCode));
+
+            sq_pushstring(vm, TEXT("constructor"), -1);
+            bindUserData<T*>(vm, allocator);
+            static TCHAR params[33];
+            paramPacker<T*, Args...>(params);
+
+            if (release) {
+                sq_newclosure(vm, &detail::classAllocator<T, Args...>, 1);
+            }
+            else {
+                sq_newclosure(vm, &detail::classAllocatorNoRelease<T, Args...>, 1);
+            }
+
+            sq_setparamscheck(vm, nparams + 1, params);
+            sq_newslot(vm, -3, false);
+            sq_newslot(vm, -3, SQFalse);
+
+            return clsObj;
+        }
+#endif
+
+#ifdef SQUNICODE
         template<typename T>
         static Object addAbstractClass(HSQUIRRELVM vm, const FString &name) {
           static const auto hashCode = typeid(T*).hash_code();
