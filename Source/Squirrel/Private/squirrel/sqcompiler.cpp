@@ -1021,9 +1021,23 @@ public:
                     Expect(_SC(':')); Expression();
                     break;
                 }
+            case TK_CLASS: {
+                Lex();
+                SQObject id = Expect(TK_IDENTIFIER);
+                _fs->AddInstruction(_OP_LOAD, _fs->PushTarget(), _fs->GetConstant(id));
+                ClassExp();
+                break;
+            }
             default :
                 _fs->AddInstruction(_OP_LOAD, _fs->PushTarget(), _fs->GetConstant(Expect(TK_IDENTIFIER)));
-                Expect(_SC('=')); Expression();
+                Expect(_SC('='));
+                if (_token == TK_CLASS) {
+                    Lex();
+                    ClassExp();
+                }
+                else {
+                    Expression();
+                }
             }
             if(_token == separator) Lex();//optional comma/semicolon
             nkeys++;
