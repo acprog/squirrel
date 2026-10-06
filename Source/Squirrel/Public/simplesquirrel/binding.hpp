@@ -227,6 +227,29 @@ namespace ssq {
             return clsObj;
         }
 #endif
+#ifdef SQUNICODE
+        template<typename T>
+        static Object addAbstractClass(HSQUIRRELVM vm, const FString& name, const HSQOBJECT& base) {
+            static const auto hashCode = typeid(T*).hash_code();
+            Object clsObj(vm);
+
+            sq_pushstring(vm, *name, name.Len());
+            sq_pushobject(vm, base);
+            sq_newclass(vm, SQTrue);
+
+            HSQOBJECT obj;
+            sq_getstackobj(vm, -1, &obj);
+            addClassObj(vm, hashCode, obj);
+
+            sq_getstackobj(vm, -1, &clsObj.getRaw());
+            sq_addref(vm, &clsObj.getRaw());
+
+            sq_settypetag(vm, -1, reinterpret_cast<SQUserPointer>(hashCode));
+            sq_newslot(vm, -3, SQFalse);
+
+            return clsObj;
+        }
+#endif
         template<class Ret, class... Args, size_t... Is>
         static Ret callGlobal(HSQUIRRELVM vm, FuncPtr<Ret(Args...)>* funcPtr, index_list<Is...>) {
             Object::caller_vm = vm;

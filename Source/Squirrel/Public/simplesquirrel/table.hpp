@@ -92,6 +92,15 @@ namespace ssq {
             sq_pop(vm, 1);
             return cls;
         }
+
+        template<typename T>
+        Class addAbstractClass(const FString& name, const Class& base) {
+            sq_pushobject(vm, obj);
+            Class cls(detail::addAbstractClass<T>(vm, name, base.getRaw()));
+            sq_pop(vm, 1);
+            return cls;
+        }
+
         /**
         * @brief Adds a new function type to this table
         * @returns Function object references the added function
