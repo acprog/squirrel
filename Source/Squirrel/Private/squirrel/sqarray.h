@@ -23,10 +23,16 @@ public:
     void Finalize(){
         _values.resize(0);
     }
+    static SQInteger NormalizeIndex(SQInteger idx, SQInteger size)
+    {
+        if (idx < 0) idx += size;
+        return idx;
+    }
     bool Get(const SQInteger nidx,SQObjectPtr &val)
     {
-        if(nidx>=0 && nidx<(SQInteger)_values.size()){
-            SQObjectPtr &o = _values[nidx];
+        SQInteger idx = NormalizeIndex(nidx, (SQInteger)_values.size());
+        if(idx>=0 && idx<(SQInteger)_values.size()){
+            SQObjectPtr &o = _values[idx];
             val = _realval(o);
             return true;
         }
@@ -34,11 +40,26 @@ public:
     }
     bool Set(const SQInteger nidx,const SQObjectPtr &val)
     {
-        if(nidx>=0 && nidx<(SQInteger)_values.size()){
-            _values[nidx]=val;
+        SQInteger idx = NormalizeIndex(nidx, (SQInteger)_values.size());
+        if(idx>=0 && idx<(SQInteger)_values.size()){
+            _values[idx]=val;
             return true;
         }
         else return false;
+    }
+    void Slice(SQInteger start, bool hasEnd, SQInteger end, SQArray *out)
+    {
+        SQInteger size = (SQInteger)_values.size();
+        start = NormalizeIndex(start, size);
+        if (start < 0) start = 0;
+        if (start > size) start = size;
+        if (!hasEnd) end = size;
+        else end = NormalizeIndex(end, size);
+        if (end < 0) end = 0;
+        if (end > size) end = size;
+        if (end < start) end = start;
+        for (SQInteger i = start; i < end; i++)
+            out->Append(_values[i]);
     }
     SQInteger Next(const SQObjectPtr &refpos,SQObjectPtr &outkey,SQObjectPtr &outval)
     {

@@ -1126,6 +1126,27 @@ exception_restore:
             case _OP_CLOSE:
                 if(_openouters) CloseOuters(&(STK(arg1)));
                 continue;
+            case _OP_SLICE: {
+                if (sq_type(STK(arg1)) != OT_ARRAY) {
+                    Raise_Error(_SC("slice expected array"));
+                    SQ_THROW();
+                }
+                if (sq_type(STK(arg2)) != OT_INTEGER && sq_type(STK(arg2)) != OT_NULL) {
+                    Raise_Error(_SC("slice start must be integer"));
+                    SQ_THROW();
+                }
+                SQInteger start = sq_type(STK(arg2)) == OT_NULL ? 0 : _integer(STK(arg2));
+                bool hasEnd = sq_type(STK(arg3)) != OT_NULL;
+                if (hasEnd && sq_type(STK(arg3)) != OT_INTEGER) {
+                    Raise_Error(_SC("slice end must be integer"));
+                    SQ_THROW();
+                }
+                SQInteger end = hasEnd ? _integer(STK(arg3)) : 0;
+                SQArray *dst = SQArray::Create(_ss(this), 0);
+                _array(STK(arg1))->Slice(start, hasEnd, end, dst);
+                TARGET = dst;
+                continue;
+            }
             }
 
         }

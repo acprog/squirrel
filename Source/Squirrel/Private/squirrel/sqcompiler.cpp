@@ -638,7 +638,36 @@ public:
                 break;
             case _SC('['):
                 if(_lex._prevtoken == _SC('\n')) Error(_SC("cannot break deref/or comma needed after [exp]=exp slot declaration"));
-                Lex(); Expression(); Expect(_SC(']'));
+                Lex();
+                {
+                    bool slice = false;
+                    if (_token == _SC(':')) {
+                        EmitLoadConstInt(0, -1);
+                        slice = true;
+                    }
+                    else {
+                        Expression();
+                        if (_token == _SC(':')) slice = true;
+                    }
+                    if (slice) {
+                        if (!NeedGet()) Error(_SC("cannot assign to a slice"));
+                        Lex();
+                        if (_token == _SC(']'))
+                            _fs->AddInstruction(_OP_LOADNULLS, _fs->PushTarget(), 1);
+                        else
+                            Expression();
+                        Expect(_SC(']'));
+                        SQInteger end = _fs->PopTarget();
+                        SQInteger start = _fs->PopTarget();
+                        SQInteger src = _fs->PopTarget();
+                        _fs->AddInstruction(_OP_SLICE, _fs->PushTarget(), src, start, end);
+                        pos = _fs->TopTarget();
+                        _es.etype = EXPR;
+                        _es.epos = pos;
+                        break;
+                    }
+                }
+                Expect(_SC(']'));
                 pos = -1;
                 if(_es.etype==BASE) {
                     Emit2ArgsOP(_OP_GET);
