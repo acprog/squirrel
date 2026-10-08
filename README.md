@@ -24,3 +24,4 @@ Differences from Squirrel 3.2:
 12. Passing int as float and float as int to function parameters is allowed.
 13. the ability to access array elements from the end using negative indices [-1]
 14. array slice [:] similar to Python
+15. The startswith() and endswith() methods have been added to the string.

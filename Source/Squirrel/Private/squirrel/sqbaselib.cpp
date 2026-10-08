@@ -1078,6 +1078,26 @@ static SQInteger string_find(HSQUIRRELVM v)
     return sq_throwerror(v,_SC("invalid param"));
 }
 
+static SQInteger string_startswith(HSQUIRRELVM v)
+{
+    const SQChar *s = nullptr;
+    const SQChar *prefix = nullptr;
+    sq_getstring(v, 1, &s);
+    sq_getstring(v, 2, &prefix);
+    sq_pushbool(v, FString(s).StartsWith(FString(prefix)));
+    return 1;
+}
+
+static SQInteger string_endswith(HSQUIRRELVM v)
+{
+    const SQChar *s = nullptr;
+    const SQChar *suffix = nullptr;
+    sq_getstring(v, 1, &s);
+    sq_getstring(v, 2, &suffix);
+    sq_pushbool(v, FString(s).EndsWith(FString(suffix)));
+    return 1;
+}
+
 #define STRING_TOFUNCZ(func) static SQInteger string_##func(HSQUIRRELVM v) \
 {\
     SQInteger sidx,eidx; \
@@ -1110,6 +1130,8 @@ const SQRegFunction SQSharedState::_string_default_delegate_funcz[]={
     {_SC("find"),string_find,-2, _SC("s s n")},
     {_SC("tolower"),string_tolower,-1, _SC("s n n")},
     {_SC("toupper"),string_toupper,-1, _SC("s n n")},
+    {_SC("startswith"), string_startswith, 2, _SC("ss")},
+    {_SC("endswith"), string_endswith, 2, _SC("ss")},
     {_SC("weakref"),obj_delegate_weakref,1, NULL },
     {NULL,(SQFUNCTION)0,0,NULL}
 };
