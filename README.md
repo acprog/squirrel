@@ -25,4 +25,4 @@ Differences from Squirrel 3.2:
 13. the ability to access array elements from the end using negative indices [-1]
 14. array slice [:] similar to Python
 15. The startswith() and endswith() methods have been added to the string.
-16. implicit call to the default constructor is allowed if the class name is followed by a list of class_name initialization{field_name=value}
+16. implicit call to the default constructor is allowed if the class name is followed by a list of initialization class_name{field_name=value}
