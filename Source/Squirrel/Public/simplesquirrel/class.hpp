@@ -150,56 +150,6 @@ namespace ssq {
         }
 #endif
 
-#ifdef SQUNICODE
-        void setSetter(const FString& name, SQFUNCTION func) {
-            findTable(TEXT("_set"), tableSet, dlgSetStub);
-            sq_pushobject(vm, tableSet.getRaw());
-            sq_pushstring(vm, *name, name.Len());
-            sq_newclosure(vm, func, 0);
-            sq_newslot(vm, -3, SQFalse);
-            sq_pop(vm, 1);
-        }
-        void setSetter(const char* name, SQFUNCTION func) {
-            setSetter(FString(name), func);
-        }
-
-        void setGetter(const FString& name, SQFUNCTION func) {
-            findTable(TEXT("_get"), tableGet, dlgGetStub);
-            sq_pushobject(vm, tableGet.getRaw());
-            sq_pushstring(vm, *name, name.Len());
-            sq_newclosure(vm, func, 0);
-            sq_newslot(vm, -3, SQFalse);
-            sq_pop(vm, 1);
-        }
-        void setGetter(const char* name, SQFUNCTION func) {
-            setGetter(FString(name), func);
-        }
-#else
-        void setSetter(const std::string& name, SQFUNCTION func) {
-            findTable("_set", tableSet, dlgSetStub);
-            sq_pushobject(vm, tableSet.getRaw());
-            sq_pushstring(vm, name.c_str(), name.size());
-            sq_newclosure(vm, func, 0);
-            sq_newslot(vm, -3, SQFalse);
-            sq_pop(vm, 1);
-        }
-        void setSetter(const char* name, SQFUNCTION func) {
-            setSetter(std::string(name), func);
-        }
-
-        void setGetter(const std::string& name, SQFUNCTION func) {
-            findTable("_get", tableGet, dlgGetStub);
-            sq_pushobject(vm, tableGet.getRaw());
-            sq_pushstring(vm, name.c_str(), name.size());
-            sq_newclosure(vm, func, 0);
-            sq_newslot(vm, -3, SQFalse);
-            sq_pop(vm, 1);
-        }
-        void setGetter(const char* name, SQFUNCTION func) {
-            setGetter(std::string(name), func);
-        }
-#endif
-
         template<typename T, typename V>
         void addRefVar(const char* name, V T::* ptr) {
             addRefVar<V>(name, ptr);
