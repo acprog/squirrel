@@ -714,6 +714,17 @@ public:
                 }
                 return;
                 break;
+            case _SC('{'):
+                if (!_allow_brace_call || _es.donot_get || _lex._prevtoken == _SC('\n')) return;
+                _fs->AddInstruction(_OP_MOVE, _fs->PushTarget(), 0);
+                {
+                    SQInteger stackbase = _fs->PopTarget();
+                    SQInteger closure = _fs->PopTarget();
+                    _fs->AddInstruction(_OP_CALL, _fs->PushTarget(), closure, stackbase, 1);
+                }
+                ParseCallInitializer();
+                _es.etype = EXPR;
+                break;
             case _SC('('):
                 switch(_es.etype) {
                     case OBJECT: {
