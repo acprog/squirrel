@@ -149,6 +149,76 @@ namespace ssq {
             bindVar<T, V>(name, ptr, tableGet.getRaw(), varGetStub<T, V>, isStatic);
         }
 #endif
+
+#ifdef SQUNICODE
+        void setSetter(const FString& name, SQFUNCTION func) {
+            findTable(TEXT("_set"), tableSet, dlgSetStub);
+            sq_pushobject(vm, tableSet.getRaw());
+            sq_pushstring(vm, *name, name.Len());
+            sq_newclosure(vm, func, 0);
+            sq_newslot(vm, -3, SQFalse);
+            sq_pop(vm, 1);
+        }
+        void setSetter(const char* name, SQFUNCTION func) {
+            setSetter(FString(name), func);
+        }
+
+        void setGetter(const FString& name, SQFUNCTION func) {
+            findTable(TEXT("_get"), tableGet, dlgGetStub);
+            sq_pushobject(vm, tableGet.getRaw());
+            sq_pushstring(vm, *name, name.Len());
+            sq_newclosure(vm, func, 0);
+            sq_newslot(vm, -3, SQFalse);
+            sq_pop(vm, 1);
+        }
+        void setGetter(const char* name, SQFUNCTION func) {
+            setGetter(FString(name), func);
+        }
+#else
+        void setSetter(const std::string& name, SQFUNCTION func) {
+            findTable("_set", tableSet, dlgSetStub);
+            sq_pushobject(vm, tableSet.getRaw());
+            sq_pushstring(vm, name.c_str(), name.size());
+            sq_newclosure(vm, func, 0);
+            sq_newslot(vm, -3, SQFalse);
+            sq_pop(vm, 1);
+        }
+        void setSetter(const char* name, SQFUNCTION func) {
+            setSetter(std::string(name), func);
+        }
+
+        void setGetter(const std::string& name, SQFUNCTION func) {
+            findTable("_get", tableGet, dlgGetStub);
+            sq_pushobject(vm, tableGet.getRaw());
+            sq_pushstring(vm, name.c_str(), name.size());
+            sq_newclosure(vm, func, 0);
+            sq_newslot(vm, -3, SQFalse);
+            sq_pop(vm, 1);
+        }
+        void setGetter(const char* name, SQFUNCTION func) {
+            setGetter(std::string(name), func);
+        }
+#endif
+
+        template<typename T, typename V>
+        void addRefVar(const char* name, V T::* ptr) {
+            addRefVar<V>(name, ptr);
+        }
+        template<typename Src, typename T, typename V>
+        void addRefVar(const char* name, V T::* ptr) {
+#ifdef SQUNICODE
+            findTable(TEXT("_get"), tableGet, dlgGetStub);
+            findTable(TEXT("_set"), tableSet, dlgSetStub);
+            bindVar<T, V>(FString(name), ptr, tableGet.getRaw(), refGetStub<T, V>, false);
+            bindVar<T, V>(FString(name), ptr, tableSet.getRaw(), refSetStub<T, V, Src>, false);
+#else
+            findTable("_get", tableGet, dlgGetStub);
+            findTable("_set", tableSet, dlgSetStub);
+            bindVar<T, V>(std::string(name), ptr, tableGet.getRaw(), refGetStub<T, V>, false);
+            bindVar<T, V>(std::string(name), ptr, tableSet.getRaw(), refSetStub<T, V, Src>, false);
+#endif
+        }
+
         /**
         * @brief Copy assingment operator
         */
@@ -289,6 +359,32 @@ namespace ssq {
             M member = *memberPtr;
 
             ptr->*member = detail::pop<V>(vm, 2);
+            return 0;
+        }
+
+        template<typename T, typename V>
+        static SQInteger refGetStub(HSQUIRRELVM vm) {
+            T* self = nullptr;
+            sq_getinstanceup(vm, 1, reinterpret_cast<SQUserPointer*>(&self), nullptr);
+
+            typedef V T::*M;
+            M* memberPtr = nullptr;
+            sq_getuserdata(vm, -1, reinterpret_cast<SQUserPointer*>(&memberPtr), nullptr);
+
+            detail::pushByPtr(vm, &(self->**memberPtr));
+            return 1;
+        }
+
+        template<typename T, typename V, typename Src>
+        static SQInteger refSetStub(HSQUIRRELVM vm) {
+            T* self = nullptr;
+            sq_getinstanceup(vm, 1, reinterpret_cast<SQUserPointer*>(&self), nullptr);
+
+            typedef V T::*M;
+            M* memberPtr = nullptr;
+            sq_getuserdata(vm, -1, reinterpret_cast<SQUserPointer*>(&memberPtr), nullptr);
+
+            self->**memberPtr = detail::popValue<Src>(vm, 2);
             return 0;
         }
 
