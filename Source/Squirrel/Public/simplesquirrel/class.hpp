@@ -3,10 +3,37 @@
 #define SSQ_CLASS_HEADER_H
 
 #include <functional>
+#include <type_traits>
 #include "function.hpp"
 #include "binding.hpp"
 
 namespace ssq {
+
+    // Вспомогательный трейт для извлечения сигнатуры лямбды
+    template<typename T>
+    struct function_traits;
+
+    template<typename R, typename... Args>
+    struct function_traits<R(*)(Args...)> {
+        using return_type = R;
+        using arg_types = std::tuple<Args...>;
+    };
+
+    template<typename ClassType, typename R, typename... Args>
+    struct function_traits<R(ClassType::*)(Args...) const> {
+        using return_type = R;
+        using arg_types = std::tuple<Args...>;
+    };
+
+    template<typename ClassType, typename R, typename... Args>
+    struct function_traits<R(ClassType::*)(Args...)> {
+        using return_type = R;
+        using arg_types = std::tuple<Args...>;
+    };
+
+    template<typename T>
+    struct function_traits : function_traits<decltype(&T::operator())> {};
+
     /**
     * @brief Squirrel class object
     * @ingroup simplesquirrel
@@ -149,6 +176,122 @@ namespace ssq {
             bindVar<T, V>(name, ptr, tableGet.getRaw(), varGetStub<T, V>, isStatic);
         }
 #endif
+
+        // =====================================================================
+        // setSetter / setGetter — принимают лямбды
+        // =====================================================================
+        template<typename Func>
+        void setSetter(const char* name, Func func) {
+            using traits = function_traits<std::decay_t<Func>>;
+            using arg_tuple = typename traits::arg_types;
+            using Self = std::remove_pointer_t<std::tuple_element_t<0, arg_tuple>>;
+            using Value = std::decay_t<std::tuple_element_t<1, arg_tuple>>;
+
+            auto* funcPtr = new std::function<void(Self*, Value)>(func);
+
+            auto wrapper = [](HSQUIRRELVM v) -> SQInteger {
+                std::function<void(Self*, Value)>** fpp = nullptr;
+                sq_getuserdata(v, -1, reinterpret_cast<SQUserPointer*>(&fpp), nullptr);
+                auto* f = *fpp;
+
+                Self* self = nullptr;
+                if (SQ_FAILED(sq_getinstanceup(v, 1, reinterpret_cast<SQUserPointer*>(&self), nullptr)) || !self)
+                    return sq_throwerror(v, TEXT("Invalid instance in setter"));
+
+                try {
+                    if constexpr (std::is_same_v<Value, ssq::Array>) {
+                        HSQOBJECT raw;
+                        sq_getstackobj(v, 2, &raw);
+                        ssq::Object obj(v);
+                        obj.getRaw() = raw;
+                        sq_addref(v, &raw);
+                        (*f)(self, obj.toArray());
+                        sq_release(v, &raw);
+                    }
+                    else if constexpr (std::is_same_v<Value, ssq::Object>) {
+                        HSQOBJECT raw;
+                        sq_getstackobj(v, 2, &raw);
+                        ssq::Object obj(v);
+                        obj.getRaw() = raw;
+                        sq_addref(v, &raw);
+                        (*f)(self, obj);
+                        sq_release(v, &raw);
+                    }
+                    else {
+                        (*f)(self, detail::pop<Value>(v, 2));
+                    }
+                    return 0;
+                }
+                catch (const std::exception& e) {
+                    FString msg(e.what());
+                    return sq_throwerror(v, *msg);
+                }
+            };
+
+            findTable(TEXT("_set"), tableSet, dlgSetStub);
+            sq_pushobject(vm, tableSet.getRaw());
+            FString fname(name);
+            sq_pushstring(vm, *fname, fname.Len());
+
+            // userdata + release hook (как в bindVar)
+            auto* ud = static_cast<std::function<void(Self*, Value)>**>(
+                sq_newuserdata(vm, sizeof(funcPtr)));
+            *ud = funcPtr;
+            sq_setreleasehook(vm, -1, [](SQUserPointer p, SQInteger) -> SQInteger {
+                delete *static_cast<std::function<void(Self*, Value)>**>(p);
+                return 0;
+            });
+
+            sq_newclosure(vm, +wrapper, 1);
+            sq_newslot(vm, -3, SQFalse);
+            sq_pop(vm, 1);
+        }
+
+        template<typename Func>
+        void setGetter(const char* name, Func func) {
+            using traits = function_traits<std::decay_t<Func>>;
+            using Self = std::remove_pointer_t<std::tuple_element_t<0, typename traits::arg_types>>;
+            using Value = typename traits::return_type;
+
+            auto* funcPtr = new std::function<Value(Self*)>(func);
+
+            auto wrapper = [](HSQUIRRELVM v) -> SQInteger {
+                std::function<Value(Self*)>** fpp = nullptr;
+                sq_getuserdata(v, -1, reinterpret_cast<SQUserPointer*>(&fpp), nullptr);
+                auto* f = *fpp;
+
+                Self* self = nullptr;
+                if (SQ_FAILED(sq_getinstanceup(v, 1, reinterpret_cast<SQUserPointer*>(&self), nullptr)) || !self)
+                    return sq_throwerror(v, TEXT("Invalid instance in getter"));
+
+                try {
+                    Value result = (*f)(self);
+                    detail::push(v, result);
+                    return 1;
+                }
+                catch (const std::exception& e) {
+                    FString msg(e.what());
+                    return sq_throwerror(v, *msg);
+                }
+            };
+
+            findTable(TEXT("_get"), tableGet, dlgGetStub);
+            sq_pushobject(vm, tableGet.getRaw());
+            FString fname(name);
+            sq_pushstring(vm, *fname, fname.Len());
+
+            auto* ud = static_cast<std::function<Value(Self*)>**>(
+                sq_newuserdata(vm, sizeof(funcPtr)));
+            *ud = funcPtr;
+            sq_setreleasehook(vm, -1, [](SQUserPointer p, SQInteger) -> SQInteger {
+                delete *static_cast<std::function<Value(Self*)>**>(p);
+                return 0;
+            });
+
+            sq_newclosure(vm, +wrapper, 1);
+            sq_newslot(vm, -3, SQFalse);
+            sq_pop(vm, 1);
+        }
 
         template<typename T, typename V>
         void addRefVar(const char* name, V T::* ptr) {
