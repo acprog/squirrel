@@ -80,6 +80,7 @@ public:
         _lex.Init(_ss(v), rg, up,ThrowError,this);
         _sourcename = SQString::Create(_ss(v), sourcename);
         _lineinfo = lineinfo;_raiseerror = raiseerror;
+        _allow_brace_call = true;
         _scope.outers = 0;
         _scope.stacksize = 0;
         _compilererror[0] = _SC('\0');
@@ -772,6 +773,22 @@ public:
 
                 SQInteger pos = -1;
                 Lex();
+                if(_token == _SC('{') && _allow_brace_call && !_es.donot_get && _lex._prevtoken != _SC('\n')) {
+                    _fs->PushTarget(0);
+                    _fs->AddInstruction(_OP_LOAD, _fs->PushTarget(), _fs->GetConstant(id));
+                    SQInteger key = _fs->PopTarget();
+                    SQInteger table = _fs->PopTarget();
+                    SQInteger closure = _fs->PushTarget();
+                    SQInteger ttarget = _fs->PushTarget();
+                    _fs->AddInstruction(_OP_PREPCALL, closure, key, table, ttarget);
+                    SQInteger stackbase = _fs->PopTarget();
+                    SQInteger clo = _fs->PopTarget();
+                    _fs->AddInstruction(_OP_CALL, _fs->PushTarget(), clo, stackbase, 1);
+                    ParseCallInitializer();
+                    _es.etype = EXPR;
+                    _es.epos = _fs->TopTarget();
+                    return _es.epos;
+                }
                 if((pos = _fs->GetLocalVariable(id)) != -1) {
                     /* Handle a local variable (includes 'this') */
                     _fs->PushTarget(pos);
@@ -980,30 +997,30 @@ public:
          SQInteger stackbase = _fs->PopTarget();
          SQInteger closure = _fs->PopTarget();
          _fs->AddInstruction(_OP_CALL, _fs->PushTarget(), closure, stackbase, nargs);
-		 if (_token == '{')
-		 {
-			 SQInteger retval = _fs->TopTarget();
-			 SQInteger nkeys = 0;
-			 Lex();
-			 while (_token != '}') {
-				 switch (_token) {
-				 case _SC('['):
-					 Lex(); CommaExpr(); Expect(_SC(']'));
-					 Expect(_SC('=')); Expression();
-					 break;
-				 default:
-					 _fs->AddInstruction(_OP_LOAD, _fs->PushTarget(), _fs->GetConstant(Expect(TK_IDENTIFIER)));
-					 Expect(_SC('=')); Expression();
-					 break;
-				 }
-				 if (_token == ',') Lex();
-				 nkeys++;
-				 SQInteger val = _fs->PopTarget();
-				 SQInteger key = _fs->PopTarget();
-				 _fs->AddInstruction(_OP_SET, 0xFF, retval, key, val);
-			 }
-			 Lex();
-		 }
+         ParseCallInitializer();
+    }
+    void ParseCallInitializer()
+    {
+        if (_token != '{') return;
+        SQInteger retval = _fs->TopTarget();
+        Lex();
+        while (_token != '}') {
+            switch (_token) {
+            case _SC('['):
+                Lex(); CommaExpr(); Expect(_SC(']'));
+                Expect(_SC('=')); Expression();
+                break;
+            default:
+                _fs->AddInstruction(_OP_LOAD, _fs->PushTarget(), _fs->GetConstant(Expect(TK_IDENTIFIER)));
+                Expect(_SC('=')); Expression();
+                break;
+            }
+            if (_token == ',') Lex();
+            SQInteger val = _fs->PopTarget();
+            SQInteger key = _fs->PopTarget();
+            _fs->AddInstruction(_OP_SET, 0xFF, retval, key, val);
+        }
+        Lex();
     }
     void ParseTableOrClass(SQInteger separator,SQInteger terminator)
     {
@@ -1540,7 +1557,11 @@ public:
         SQInteger base = -1;
         SQInteger attrs = -1;
         if(_token == TK_EXTENDS) {
-            Lex(); Expression();
+            Lex();
+            bool prev = _allow_brace_call;
+            _allow_brace_call = false;
+            Expression();
+            _allow_brace_call = prev;
             base = _fs->TopTarget();
         }
         if(_token == TK_ATTR_OPEN) {
@@ -1686,6 +1707,7 @@ private:
     SQLexer _lex;
     bool _lineinfo;
     bool _raiseerror;
+    bool _allow_brace_call;
     SQInteger _debugline;
     SQInteger _debugop;
     SQExpState   _es;
