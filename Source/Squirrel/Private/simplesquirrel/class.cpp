@@ -95,6 +95,29 @@ namespace ssq {
 
         sq_pop(vm, 1); // Pop class obj
 
+        FString aux = TEXT("__ssq") + name;
+        SQInteger top = sq_gettop(vm);
+        sq_pushobject(vm, obj);
+        sq_pushstring(vm, *aux, aux.Len());
+        sq_pushobject(vm, table.getRaw());
+        sq_newslot(vm, -3, SQTrue);
+
+        sq_pushobject(vm, obj);
+        if (SQ_SUCCEEDED(sq_getbase(vm, -1)) && sq_gettype(vm, -1) == OT_CLASS) {
+          sq_pushstring(vm, *aux, aux.Len());
+          if (SQ_SUCCEEDED(sq_get(vm, -2))) {
+            sq_pushnull(vm);
+            while (SQ_SUCCEEDED(sq_next(vm, -2))) {
+              sq_pushobject(vm, table.getRaw());
+              sq_push(vm, -3);
+              sq_push(vm, -3);
+              sq_newslot(vm, -3, SQFalse);
+              sq_pop(vm, 3);
+            }
+          }
+        }
+        sq_settop(vm, top);
+
       }
       else {
         // Return one
@@ -136,6 +159,29 @@ namespace ssq {
             }
 
             sq_pop(vm, 1); // Pop class obj
+
+            std::string aux = std::string("__ssq") + name;
+            SQInteger top = sq_gettop(vm);
+            sq_pushobject(vm, obj);
+            sq_pushstring(vm, aux.c_str(), aux.size());
+            sq_pushobject(vm, table.getRaw());
+            sq_newslot(vm, -3, SQTrue);
+
+            sq_pushobject(vm, obj);
+            if (SQ_SUCCEEDED(sq_getbase(vm, -1)) && sq_gettype(vm, -1) == OT_CLASS) {
+                sq_pushstring(vm, aux.c_str(), aux.size());
+                if (SQ_SUCCEEDED(sq_get(vm, -2))) {
+                    sq_pushnull(vm);
+                    while (SQ_SUCCEEDED(sq_next(vm, -2))) {
+                        sq_pushobject(vm, table.getRaw());
+                        sq_push(vm, -3);
+                        sq_push(vm, -3);
+                        sq_newslot(vm, -3, SQFalse);
+                        sq_pop(vm, 3);
+                    }
+                }
+            }
+            sq_settop(vm, top);
 
         } else {
             // Return one
