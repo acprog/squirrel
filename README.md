@@ -26,3 +26,5 @@ Differences from Squirrel 3.2:
 14. array slice [:] similar to Python
 15. The startswith() and endswith() methods have been added to the string.
 16. implicit call to the default constructor is allowed if the class name is followed by a list of initialization class_name{field_name=value}
+17. print() can print multiple arguments
+18. it is allowed to return several function parameters as local variables return 1, "ab"

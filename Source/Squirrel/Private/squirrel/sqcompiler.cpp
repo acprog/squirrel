@@ -234,7 +234,22 @@ public:
             Lex();
             if(!IsEndOfStatement()) {
                 SQInteger retexp = _fs->GetCurrentPos()+1;
-                CommaExpr();
+                Expression();
+                if (_token == _SC(',')) {
+                    SQInteger first = _fs->TopTarget();
+                    SQInteger arr = _fs->PushTarget();
+                    _fs->AddInstruction(_OP_NEWOBJ, arr, 0, 0, NOT_ARRAY);
+                    _fs->AddInstruction(_OP_APPENDARRAY, arr, first, AAT_STACK);
+                    _fs->_targetstack.pop_back();
+                    _fs->_targetstack.pop_back();
+                    _fs->_targetstack.push_back(arr);
+                    while (_token == _SC(',')) {
+                        Lex();
+                        if (IsEndOfStatement()) break;
+                        Expression();
+                        _fs->AddInstruction(_OP_APPENDARRAY, arr, _fs->PopTarget(), AAT_STACK);
+                    }
+                }
                 if(op == _OP_RETURN && _fs->_traps > 0)
                     _fs->AddInstruction(_OP_POPTRAP, _fs->_traps, 0);
                 _fs->_returnexp = retexp;
@@ -1135,21 +1150,43 @@ public:
             return;
         }
 
+        SQObject names[64];
+        SQInteger nnames = 0;
         do {
-            varname = Expect(TK_IDENTIFIER);
-            if(_token == _SC('=')) {
-                Lex(); Expression();
-                SQInteger src = _fs->PopTarget();
-                SQInteger dest = _fs->PushTarget();
-                if(dest != src) _fs->AddInstruction(_OP_MOVE, dest, src);
+            if (nnames >= 64) Error(_SC("too many local variables"));
+            names[nnames++] = Expect(TK_IDENTIFIER);
+            if (_token == _SC(',')) Lex(); else break;
+        } while (1);
+
+        if (_token == _SC('=') && nnames > 1) {
+            Lex();
+            Expression();
+            SQInteger src = _fs->TopTarget();
+            for (SQInteger i = 0; i < nnames; i++) {
+                EmitLoadConstInt(i, -1);
+                SQInteger idx = _fs->PopTarget();
+                SQInteger val = _fs->PushTarget();
+                _fs->AddInstruction(_OP_GET, val, src, idx, 0);
+                _fs->PopTarget();
+                _fs->PushLocalVariable(names[i]);
             }
-            else{
-                _fs->AddInstruction(_OP_LOADNULLS, _fs->PushTarget(),1);
+            if (!_fs->_targetstack.empty()) _fs->_targetstack.pop_back();
+        }
+        else {
+            for (SQInteger i = 0; i < nnames; i++) {
+                if (i == 0 && _token == _SC('=')) {
+                    Lex(); Expression();
+                    SQInteger src = _fs->PopTarget();
+                    SQInteger dest = _fs->PushTarget();
+                    if (dest != src) _fs->AddInstruction(_OP_MOVE, dest, src);
+                }
+                else {
+                    _fs->AddInstruction(_OP_LOADNULLS, _fs->PushTarget(), 1);
+                }
+                _fs->PopTarget();
+                _fs->PushLocalVariable(names[i]);
             }
-            _fs->PopTarget();
-            _fs->PushLocalVariable(varname);
-            if(_token == _SC(',')) Lex(); else break;
-        } while(1);
+        }
     }
     void IfBlock()
     {
