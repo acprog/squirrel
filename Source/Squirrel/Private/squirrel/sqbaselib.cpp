@@ -196,15 +196,21 @@ static SQInteger get_slice_params(HSQUIRRELVM v,SQInteger &sidx,SQInteger &eidx,
 
 static SQInteger base_print(HSQUIRRELVM v)
 {
-    const SQChar *str;
-    if(SQ_SUCCEEDED(sq_tostring(v,2)))
-    {
-        if(SQ_SUCCEEDED(sq_getstring(v,-1,&str))) {
-            if(_ss(v)->_printfunc) _ss(v)->_printfunc(v,_SC("%s"),str);
-            return 0;
+    SQInteger nargs = sq_gettop(v);
+    for (SQInteger i = 2; i <= nargs; i++) {
+        const SQChar *str;
+        if (SQ_SUCCEEDED(sq_tostring(v, i)) && SQ_SUCCEEDED(sq_getstring(v, -1, &str))) {
+            if (_ss(v)->_printfunc) _ss(v)->_printfunc(v, _SC("%s"), str);
+            sq_pop(v, 1);
         }
+        else {
+            return SQ_ERROR;
+        }
+        if (i < nargs && _ss(v)->_printfunc)
+            _ss(v)->_printfunc(v, _SC("\t"));
     }
-    return SQ_ERROR;
+    if (_ss(v)->_printfunc) _ss(v)->_printfunc(v, _SC("\n"));
+    return 0;
 }
 
 static SQInteger base_error(HSQUIRRELVM v)
@@ -293,7 +299,7 @@ static const SQRegFunction base_funcs[]={
     {_SC("getconsttable"),base_getconsttable,1, NULL},
     {_SC("setconsttable"),base_setconsttable,2, NULL},
     {_SC("assert"),base_assert,-2, NULL},
-    {_SC("print"),base_print,2, NULL},
+    {_SC("print"),base_print,-2, NULL},
     {_SC("error"),base_error,2, NULL},
     {_SC("compilestring"),base_compilestring,-2, _SC(".ss")},
     {_SC("newthread"),base_newthread,2, _SC(".c")},
