@@ -181,7 +181,8 @@ namespace ssq {
         // setSetter / setGetter — принимают лямбды
         // =====================================================================
         template<typename Func>
-        void setSetter(const char* name, Func func) {
+        typename std::enable_if<!std::is_member_function_pointer<std::decay_t<Func>>::value>::type
+        setSetter(const char* name, Func func) {
             using traits = function_traits<std::decay_t<Func>>;
             using arg_tuple = typename traits::arg_types;
             using Self = std::remove_pointer_t<std::tuple_element_t<0, arg_tuple>>;
@@ -248,7 +249,8 @@ namespace ssq {
         }
 
         template<typename Func>
-        void setGetter(const char* name, Func func) {
+        typename std::enable_if<!std::is_member_function_pointer<std::decay_t<Func>>::value>::type
+        setGetter(const char* name, Func func) {
             using traits = function_traits<std::decay_t<Func>>;
             using Self = std::remove_pointer_t<std::tuple_element_t<0, typename traits::arg_types>>;
             using Value = typename traits::return_type;
