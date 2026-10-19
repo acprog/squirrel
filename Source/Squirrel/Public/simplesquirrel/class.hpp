@@ -293,6 +293,31 @@ namespace ssq {
             sq_pop(vm, 1);
         }
 
+        template<typename Return, typename Object, typename Value>
+        void setSetter(const char* name, Return(Object::*memfunc)(Value)) {
+            setSetter(name, [memfunc](Object* self, Value value) {
+                (self->*memfunc)(value);
+            });
+        }
+        template<typename Return, typename Object, typename Value>
+        void setSetter(const char* name, Return(Object::*memfunc)(Value) const) {
+            setSetter(name, [memfunc](Object* self, Value value) {
+                (self->*memfunc)(value);
+            });
+        }
+        template<typename Return, typename Object>
+        void setGetter(const char* name, Return(Object::*memfunc)()) {
+            setGetter(name, [memfunc](Object* self) -> Return {
+                return (self->*memfunc)();
+            });
+        }
+        template<typename Return, typename Object>
+        void setGetter(const char* name, Return(Object::*memfunc)() const) {
+            setGetter(name, [memfunc](Object* self) -> Return {
+                return (self->*memfunc)();
+            });
+        }
+
         template<typename T, typename V>
         void addRefVar(const char* name, V T::* ptr) {
             addRefVar<V>(name, ptr);
