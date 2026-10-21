@@ -139,7 +139,7 @@ namespace ssq {
         */
 #ifdef SQUNICODE
         template<typename F>
-        Function addFunc(const TCHAR* name, const F& lambda, bool isStatic = false) {
+        Function addFunc(const char* name, const F& lambda, bool isStatic = false) {
             return addFunc(name, detail::make_function(lambda), isStatic);
         }
         template<typename T, typename V>
